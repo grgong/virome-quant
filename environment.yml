@@ -1,12 +1,10 @@
-# One environment for both commands; the versions are those of the discovery side.
-# Create once:  conda env create -p <path>/virome_quant -f environment.yml
+# conda env create -p <path>/virome_quant -f environment.yml
 name: virome_quant
 channels:
   - conda-forge
   - bioconda
 dependencies:
   - python=3.12
-  - pigz
   - fastp=1.0.1
   - seqtk=1.4
   - minimap2=2.31

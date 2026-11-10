@@ -1,48 +1,51 @@
 # virome-quant
 
-Counts the viruses of RNA-seq libraries by read mapping. The virus discovery (host removal,
-assembly, taxonomy, vOTU clustering, CheckV) is done separately, from 2 M read pairs per library;
-this repository makes that subsample and, with the resulting vOTU panel, counts the viruses in
-all reads of every library. Needs SLURM.
+Count viruses in RNA-seq libraries by mapping the reads to a set of viral genomes (vOTUs) that
+were assembled separately. Needs SLURM.
+
+The virus discovery (host removal, assembly, taxonomy, vOTU clustering, CheckV) runs on 2 M read
+pairs per library and is done elsewhere. This repository does the two steps around it: it makes
+the 2 M subsample, and once you have the vOTU panel it counts the vOTUs in all reads.
 
 ## Setup
 
 ```bash
-conda env create -p /scratch/$USER/envs/virome_quant -f environment.yml
-cp config.sh my_config.sh        # set CONDA_ENV, CONDA_INIT, PARTITION, TMPDIR_JOBS
+conda env create -p ~/envs/virome_quant -f environment.yml
+conda activate virome_quant
+export TMPDIR=/scratch/$USER/tmp; mkdir -p $TMPDIR    # a mapping job uses up to 20 GB here
 ```
+
+Activate the environment in the shell you submit from; the jobs inherit it.
 
 ## Samplesheet
 
-Tab-separated, one row per library, columns `sample`, `fastq_1`, `fastq_2` (plus any columns of
-your own, e.g. `condition`, copied to the results). Several lanes of one library:
-comma-separated files in `fastq_1` and in `fastq_2`, in the same order.
-See `samples.example.tsv`.
+Tab-separated, Unix line endings, absolute paths, columns `sample`, `fastq_1`, `fastq_2`. Other
+columns (condition, stage, ...) are copied to the results. A library on several lanes has the
+files separated by commas in `fastq_1` and `fastq_2`, in the same order. See `samples.example.tsv`.
 
-## 1. Subsample (input of the discovery)
-
-```bash
-bash run.sh subsample my_config.sh samples.tsv /scratch/$USER/virome_2M
-```
-
-Draws 2,000,000 read pairs per library (seqtk, seed 11). Send the output directory
-(`reads/`, `samples_2M.tsv`) to the discovery side.
-
-## 2. Quantify
-
-The discovery side returns a panel directory with `panel.fa`, `virus_units.tsv` and
-`quality_summary.tsv`.
+## Subsample
 
 ```bash
-bash run.sh quantify my_config.sh samples.tsv <panel_dir> /scratch/$USER/virome_quant
+N=$(( $(wc -l < samples.tsv) - 1 ))
+sbatch -p <partition> --array=1-$N%20 subsample.sbatch samples.tsv virome_2M
 ```
 
-All reads of every library -> fastp -> minimap2 to the panel -> CoverM. A vOTU counts in a
-library when reads at >= 90 % identity cover >= 75 % of it; RPM = reads per million reads
-passing fastp.
+Send `virome_2M/reads/` (about 280 MB per library) to whoever runs the discovery.
 
-Results in `<outdir>/results/`: `viral_rpm.tsv` (libraries x high-quality vOTUs, RPM),
-`votus.tsv` (every vOTU), `viral_long.tsv` (library x vOTU: reads, covered fraction, RPM,
-highest RPM of the vOTU in another library).
+## Count
 
-A failed job: read its log in `<outdir>/logs/`, fix the cause, then `bash run.sh resume <outdir>`.
+The discovery gives you a directory with `panel.fa`, `virus_units.tsv` and `quality_summary.tsv`.
+
+```bash
+sbatch -p <partition> --array=1-$N%20 map.sbatch samples.tsv <panel_dir> virome_quant
+python3 count.py samples.tsv <panel_dir> virome_quant      # after every map task has finished
+```
+
+A vOTU counts in a library when reads at least 90 % identical to it cover at least 75 % of its
+length. RPM is per million reads that pass fastp. If a map task fails, rerun it alone with
+`--array=<its number>`.
+
+Results are in `virome_quant/results/`:
+
+- `viral_long.tsv`: one row per library and vOTU, with reads, fraction covered, RPM and CheckV quality
+- `viral_rpm.tsv`: libraries by high-quality vOTUs, RPM
