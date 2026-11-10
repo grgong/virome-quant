@@ -1,3 +1,3 @@
-sample	stage	tissue	flowcell_lane	fastq_1	fastq_2
-L4_gut_1	L4	gut	22KV72LT4:7	/path/L4_gut_1_R1.fastq.gz	/path/L4_gut_1_R2.fastq.gz
-adult_head_1	adult	head	22KV72LT4:6,22KV5KLT4:1	/path/adult_head_1_L6_R1.fastq.gz,/path/adult_head_1_L1_R1.fastq.gz	/path/adult_head_1_L6_R2.fastq.gz,/path/adult_head_1_L1_R2.fastq.gz
+sample	condition	fastq_1	fastq_2
+L4_gut_1	L4_gut	/path/L4_gut_1_R1.fastq.gz	/path/L4_gut_1_R2.fastq.gz
+adult_head_1	adult_head	/path/adult_head_1_L6_R1.fastq.gz,/path/adult_head_1_L1_R1.fastq.gz	/path/adult_head_1_L6_R2.fastq.gz,/path/adult_head_1_L1_R2.fastq.gz

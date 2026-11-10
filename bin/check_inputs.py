@@ -1,9 +1,9 @@
 """Check the samplesheet (and the vOTU panel) and write the manifest the steps read.
 
 Usage: python3 -I check_inputs.py <samples.tsv> <manifest.tsv> [<panel_dir>]
-samples.tsv: tab-separated, header with at least sample, fastq_1, fastq_2, flowcell_lane; any other
-column (stage, tissue, ...) is metadata carried to the result tables. Several lanes of one sample:
-comma-separated files in fastq_1 / fastq_2 (same order) and flowcell:lane items in flowcell_lane.
+samples.tsv: tab-separated, header with at least sample, fastq_1, fastq_2; any other column
+(condition, stage, ...) is metadata carried to the result tables. Several lanes of one sample:
+comma-separated files in fastq_1 / fastq_2 (same order).
 A relative FASTQ path is relative to the samplesheet's directory.
 manifest.tsv: sample, fastq_1, fastq_2 (absolute paths, no header), in samplesheet order.
 panel_dir: panel.fa, virus_units.tsv and quality_summary.tsv, which must name the same vOTUs.
@@ -22,7 +22,7 @@ rows = list(csv.DictReader(open(src, newline=""), delimiter="\t"))
 errors = []
 if not rows:
     sys.exit(f"ERROR: {src} has no sample rows")
-missing = {"sample", "fastq_1", "fastq_2", "flowcell_lane"} - set(rows[0])
+missing = {"sample", "fastq_1", "fastq_2"} - set(rows[0])
 if missing:
     sys.exit(f"ERROR: {src} lacks the column(s) {', '.join(sorted(missing))} (tab-separated?)")
 seen, manifest = set(), []
@@ -44,8 +44,6 @@ for i, r in enumerate(rows, start=2):
             errors.append(f"line {i}: space in the path {f}")
         elif not os.path.isfile(f) or os.path.getsize(f) == 0:
             errors.append(f"line {i}: missing or empty file {f}")
-    if not all(re.fullmatch(r"[^:,\s]+:[^:,\s]+", x) for x in r["flowcell_lane"].split(",")):
-        errors.append(f"line {i}: flowcell_lane '{r['flowcell_lane']}' (flowcell:lane, comma-separated; from the read headers)")
     manifest.append(f"{s}\t{','.join(f1)}\t{','.join(f2)}\n")
 
 if panel:
@@ -65,5 +63,5 @@ if errors:
 with open(dst, "w") as fo:
     fo.writelines(manifest)
 print(f"{len(rows)} samples, metadata columns: "
-      + (", ".join(c for c in rows[0] if c not in ("sample", "fastq_1", "fastq_2", "flowcell_lane")) or "none")
+      + (", ".join(c for c in rows[0] if c not in ("sample", "fastq_1", "fastq_2")) or "none")
       + (f"; panel: {len(fa)} vOTUs" if panel else ""))

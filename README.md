@@ -14,10 +14,9 @@ cp config.sh my_config.sh        # set CONDA_ENV, CONDA_INIT, PARTITION, TMPDIR_
 
 ## Samplesheet
 
-Tab-separated, one row per library, columns `sample`, `fastq_1`, `fastq_2`, `flowcell_lane`
-(plus any columns of your own, copied to the results). Several lanes of one library:
-comma-separated files in `fastq_1` / `fastq_2` and `FLOWCELL:LANE` items in `flowcell_lane`
-(fields 3 and 4 of a read name: `zcat x_R1.fastq.gz | head -1 | cut -d: -f3,4`).
+Tab-separated, one row per library, columns `sample`, `fastq_1`, `fastq_2` (plus any columns of
+your own, e.g. `condition`, copied to the results). Several lanes of one library:
+comma-separated files in `fastq_1` and in `fastq_2`, in the same order.
 See `samples.example.tsv`.
 
 ## 1. Subsample (input of the discovery)
@@ -43,7 +42,7 @@ library when reads at >= 90 % identity cover >= 75 % of it; RPM = reads per mill
 passing fastp.
 
 Results in `<outdir>/results/`: `viral_rpm.tsv` (libraries x high-quality vOTUs, RPM),
-`votus.tsv` (every vOTU), `viral_long.tsv` (library x vOTU: reads, covered fraction, RPM, carry-over
-columns).
+`votus.tsv` (every vOTU), `viral_long.tsv` (library x vOTU: reads, covered fraction, RPM,
+highest RPM of the vOTU in another library).
 
 A failed job: read its log in `<outdir>/logs/`, fix the cause, then `bash run.sh resume <outdir>`.

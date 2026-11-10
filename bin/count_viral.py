@@ -12,10 +12,9 @@ reads passing fastp, both mates counted.
 Outputs (results/):
   coverm_contig.tsv   CoverM output (sample x vOTU representative)
   viral_long.tsv      sample x vOTU, every vOTU: the sample's metadata columns, vOTU name and CheckV
-                      tier, reads >= 90 % identity, covered fraction, detected, counted reads, RPM;
-                      the highest RPM of the vOTU in another sample on a shared flowcell, that
-                      sample, and this sample's RPM as % of it (carry-over below 0.1 %: Pettersson
-                      2019, French 2022, Waller 2024); the same for any other sample
+                      tier, reads >= 90 % identity, covered fraction, detected, counted reads, RPM,
+                      the highest RPM of the vOTU in another sample, that sample, and this
+                      sample's RPM as % of it
   votus.tsv           one row per vOTU: name, length, contigs, CheckV tier and completeness,
                       samples detected, highest RPM
   viral_rpm.tsv       samples (rows, with metadata) x MIUViG high-quality vOTUs detected in at
@@ -60,7 +59,6 @@ for s in samples:
 counted = {k: n if covered[k] >= MIN_COVERED else 0 for k, n in reads_id.items()}
 by_sample = {s["sample"]: s for s in samples}
 rpm = {(sid, u): n / by_sample[sid]["total"] * 1e6 for (sid, u), n in counted.items()}
-flowcells = {s["sample"]: {lane.split(":")[0] for lane in s["flowcell_lane"].split(",")} for s in samples}
 by_unit = collections.defaultdict(list)  # vOTU -> [(rpm, sample)], highest first
 for (sid, u), v in rpm.items():
     if v:
@@ -69,9 +67,8 @@ for vs in by_unit.values():
     vs.sort(reverse=True)
 
 
-def highest_other(sid, u, same_flowcell):
-    return next(((v, o) for v, o in by_unit[u] if o != sid and (not same_flowcell or flowcells[o] & flowcells[sid])),
-                (0.0, ""))
+def highest_other(sid, u):
+    return next(((v, o) for v, o in by_unit[u] if o != sid), (0.0, ""))
 
 
 def name(u):
@@ -80,16 +77,14 @@ def name(u):
 
 with open(f"{OUTD}/viral_long.tsv", "w") as fo:
     fo.write("\t".join(["sample", *meta_cols, "votu", "display_name", "checkv_quality", "reads_id90",
-                        "covered_fraction", "detected", "reads", "reads_total", "rpm", "max_rpm_same_flowcell",
-                        "max_same_flowcell_sample", "pct_of_max_same_flowcell", "max_rpm_any_sample",
-                        "max_any_sample", "pct_of_max_any"]) + "\n")
+                        "covered_fraction", "detected", "reads", "reads_total", "rpm", "max_rpm_other_sample",
+                        "max_other_sample", "pct_of_max_other"]) + "\n")
     for s in samples:
         sid = s["sample"]
         for u in votus:
             k, r = (sid, u), rpm[(sid, u)]
-            cols = []
-            for m, mo in (highest_other(sid, u, True), highest_other(sid, u, False)):
-                cols += [f"{m:.3f}", mo, f"{100 * r / m:.4f}" if m else "NA"]
+            m, mo = highest_other(sid, u)
+            cols = [f"{m:.3f}", mo, f"{100 * r / m:.4f}" if m else "NA"]
             fo.write("\t".join([sid, *(s[c] for c in meta_cols), u, name(u), checkv[u]["miuvig_quality"],
                                 str(reads_id[k]), f"{covered[k]:.4f}", str(int(covered[k] >= MIN_COVERED)),
                                 str(counted[k]), str(s["total"]), f"{r:.3f}", *cols]) + "\n")
