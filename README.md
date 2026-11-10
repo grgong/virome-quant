@@ -19,9 +19,9 @@ Activate the environment in the shell you submit from; the jobs inherit it.
 
 ## Samplesheet
 
-Tab-separated, Unix line endings, absolute paths, columns `sample`, `fastq_1`, `fastq_2`. Other
-columns (condition, stage, ...) are copied to the results. A library on several lanes has the
-files separated by commas in `fastq_1` and `fastq_2`, in the same order. See `samples.example.tsv`.
+One row per sample, tab-separated with Unix line endings, columns `sample`, `fastq_1` (R1 file) and
+`fastq_2` (R2 file), with absolute paths. Extra columns, such as condition, are copied to the
+results. See `samples.example.tsv`.
 
 ## Subsample
 

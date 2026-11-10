@@ -15,12 +15,6 @@ IFS=$'\t' read -r sample fq1 fq2 < <(awk -F'\t' -v OFS='\t' -v n="$SLURM_ARRAY_T
 mkdir -p "$OUT/map" "$OUT/fastp"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 
-# fastp needs real files, so join the lanes first
-if [[ $fq1 == *,* ]]; then
-    cat ${fq1//,/ } > "$tmp/R1.fq.gz"; cat ${fq2//,/ } > "$tmp/R2.fq.gz"
-    fq1=$tmp/R1.fq.gz; fq2=$tmp/R2.fq.gz
-fi
-
 fastp -i "$fq1" -I "$fq2" -o "$tmp/T1.fq.gz" -O "$tmp/T2.fq.gz" -z 1 \
     --detect_adapter_for_pe --trim_poly_g --low_complexity_filter --length_required 50 \
     -w "$SLURM_CPUS_PER_TASK" -j "$OUT/fastp/$sample.json" -h /dev/null 2> /dev/null
