@@ -6,7 +6,6 @@ channels:
   - bioconda
 dependencies:
   - python=3.12
-  - matplotlib
   - pigz
   - fastp=1.0.1
   - seqtk=1.4

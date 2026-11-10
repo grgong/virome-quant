@@ -50,7 +50,6 @@ case "${MODE}" in
         if [ "${MODE}" = subsample ]; then tools="seqtk pigz md5sum python3"
         else tools="fastp minimap2 samtools coverm python3"; fi
         for t in ${tools}; do command -v "${t}" > /dev/null || die "${t} not found in ${CONDA_ENV} (environment.yml)"; done
-        [ "${MODE}" = subsample ] || python3 -c 'import matplotlib, numpy' 2> /dev/null || die "matplotlib not found in ${CONDA_ENV}"
 
         mkdir -p "${OUT}/logs" "${OUT}/done"
         python3 -I "${VP}/bin/check_inputs.py" "${SAMPLES}" "${OUT}/manifest.tsv" ${PANEL_SRC:+"${PANEL_SRC}"} || { rm -rf "${OUT}"; exit 1; }
@@ -103,7 +102,7 @@ else
     jmap=""
     all_done map || jmap=$(sub map "${RES_MAP}" "" "1-${N}%${MAX_PARALLEL}" "${S}/map.sbatch")
     [ -e "${OUT}/done/count" ] || submitted="${jmap} $(sub count "${RES_COUNT}" "${jmap}" "" "${S}/count.sbatch")"
-    next="results: ${OUT}/results/ (viral_rpm.tsv, viral_rpm.pdf, votus.tsv, viral_long.tsv)"
+    next="results: ${OUT}/results/ (viral_rpm.tsv, votus.tsv, viral_long.tsv)"
 fi
 submitted=$(echo ${submitted})
 [ -n "${submitted}" ] || { echo "Nothing to submit: every step of ${OUT} is done."; exit 0; }
