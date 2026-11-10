@@ -53,11 +53,11 @@ Results are in `virome_quant/results/`:
 ## Plot
 
 ```bash
-python3 plot.py virome_quant/results/viral_rpm.tsv -s samples_to_plot.txt -g condition -o figure
+Rscript plot.R virome_quant/results/viral_rpm.tsv -s samples_to_plot.txt -g condition -o figure
 ```
 
 Draws a heatmap with the vOTUs in rows, the samples in columns and the RPM in five bins, to
-`figure.pdf` and `figure.png`.
+`figure.pdf` and `figure.png`. It needs R and ComplexHeatmap, both in the environment.
 
 - `-s`: a text file with one sample name per line. Only these samples are drawn, in this order,
   and vOTUs without reads in them are left out. Without `-s` every sample is drawn.
