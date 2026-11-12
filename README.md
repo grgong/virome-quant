@@ -15,7 +15,7 @@ git clone https://github.com/grgong/virome-quant.git
 cd virome-quant
 conda env create -p ~/envs/virome_quant -f environment.yml
 conda activate virome_quant
-export TMPDIR=/scratch/$USER/tmp; mkdir -p $TMPDIR    # a mapping job writes up to 20 GB here
+export TMPDIR=/scratch/$USER/tmp; mkdir -p $TMPDIR    # the mapping jobs sort their BAM files here
 ```
 
 Submit the jobs from a shell where the environment is active. They use the tools of that shell.

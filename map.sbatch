@@ -15,12 +15,12 @@ IFS=$'\t' read -r sample fq1 fq2 < <(awk -F'\t' -v OFS='\t' -v n="$SLURM_ARRAY_T
 mkdir -p "$OUT/map" "$OUT/fastp"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 
-fastp -i "$fq1" -I "$fq2" -o "$tmp/T1.fq.gz" -O "$tmp/T2.fq.gz" -z 1 \
+# the trimmed pairs go straight to minimap2, no FASTQ is written;
+# primary alignments over at least 80 % of the read are kept
+fastp -i "$fq1" -I "$fq2" --stdout \
     --detect_adapter_for_pe --trim_poly_g --low_complexity_filter --length_required 50 \
-    -w "$SLURM_CPUS_PER_TASK" -j "$OUT/fastp/$sample.json" -h /dev/null 2> /dev/null
-
-# keep primary alignments that cover at least 80 % of the read
-minimap2 -ax sr -t "$SLURM_CPUS_PER_TASK" "$PANEL" "$tmp/T1.fq.gz" "$tmp/T2.fq.gz" 2> /dev/null |
+    -w "$SLURM_CPUS_PER_TASK" -j "$OUT/fastp/$sample.json" -h /dev/null 2> /dev/null |
+    minimap2 -ax sr -t "$SLURM_CPUS_PER_TASK" "$PANEL" - 2> /dev/null |
     samtools view -u -F 0x904 -e '(qlen-sclen) >= 0.8*qlen' - |
     samtools sort -@ 2 -o "$tmp/out.bam" -
 mv "$tmp/out.bam" "$OUT/map/$sample.bam"
