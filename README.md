@@ -3,7 +3,7 @@
 Scripts to measure how much of each virus there is in RNA-seq libraries. The reads are mapped to
 a set of viral genomes (vOTUs) and counted. You need a cluster with SLURM.
 
-The viral genomes are not built here. Gaorui assembles them from 2 M read pairs of each library
+The viral genomes are not built here. I assemble them from 2 M read pairs of each library
 (host removal, assembly, taxonomy, vOTU clustering, CheckV). The scripts here do what comes
 before and after: first they draw the 2 M read pairs, and when the viral genomes are ready they
 count them in all the reads.
@@ -37,11 +37,11 @@ sbatch -p <partition> --array=1-$N%20 subsample.sbatch samples.tsv virome_2M
 ```
 
 This writes 2 M read pairs of each library to `virome_2M/reads/`, about 280 MB per library. Send
-that directory to Gaorui.
+that directory to me.
 
 ## Count
 
-Gaorui sends back a directory with three files: `panel.fa` (the viral genomes),
+I send back a directory with three files: `panel.fa` (the viral genomes),
 `virus_units.tsv` and `quality_summary.tsv`.
 
 The counting uses all the reads of each library, not the 2 M subsample. `map.sbatch` trims the
@@ -84,6 +84,3 @@ ComplexHeatmap are in the environment.
   their value in this column, and samples next to each other with the same value are drawn as
   one group.
 - `-o` is the name of the output files, without the extension.
-
-Each cell is a 3.2 mm square. The script prints a warning when the figure is wider than 183 mm,
-the maximum width of a figure in Nature.

@@ -11,7 +11,7 @@
 
 suppressPackageStartupMessages(library(ComplexHeatmap))
 ht_opt(message = FALSE)
-# ComplexHeatmap measures text on a pdf device that does not know Arial; give it Helvetica metrics
+# without this ComplexHeatmap warns that it cannot find Arial
 if (!"Arial" %in% names(pdfFonts())) pdfFonts(Arial = pdfFonts()$Helvetica)
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -63,7 +63,7 @@ if (!is.null(group)) {
     stop("no column ", group, " in the table; columns: ", paste(names(tab)[2:(first - 1)], collapse = ", "))
   value <- as.character(drawn[[group]])
   run <- cumsum(c(TRUE, value[-1] != value[-n_col]))
-  every <- unique(as.character(tab[[group]]))          # a group keeps its colour whichever samples are drawn
+  every <- unique(as.character(tab[[group]]))          # colours from the whole table, so they do not change with -s
   colour <- setNames(GROUP_COLS[(seq_along(every) - 1) %% length(GROUP_COLS) + 1], every)
 }
 
@@ -79,7 +79,7 @@ build <- function() {
     a$width <- n_col * CELL
   } else {
     title <- value[!duplicated(run)]
-    # a title wider than its group is written upright
+    # turn the titles when one is wider than its group
     wide <- convertWidth(max_text_width(title, gp = gp()), "mm", valueOnly = TRUE) > min(table(run)) * 3.2
     a <- c(a, list(width = n_col * CELL + (max(run) - 1) * GAP,
                    column_split = factor(run), column_gap = GAP,
@@ -102,12 +102,12 @@ paint <- function() {
     legend = convertHeight(ComplexHeatmap:::height(lg), "inch", valueOnly = TRUE))
 }
 
-# draw once to measure, then write the files at exactly that size
+# the first drawing is only to get the size of the figure
 cairo_pdf(tempfile(fileext = ".pdf"), width = 20, height = 20, family = "Arial")
 size <- paint()
 invisible(dev.off())
 w <- size[["w"]]
-h <- max(size[["h"]], size[["legend"]] + 8 / 25.4)       # a few rows are lower than the legend
+h <- max(size[["h"]], size[["legend"]] + 8 / 25.4)       # the legend can be higher than the heatmap
 cairo_pdf(paste0(out, ".pdf"), width = w, height = h, family = "Arial")
 invisible(paint())
 invisible(dev.off())
@@ -116,4 +116,3 @@ invisible(paint())
 invisible(dev.off())
 
 message(n_row, " vOTUs x ", n_col, " samples -> ", out, ".pdf/.png (", round(w * 25.4), " mm wide)")
-if (w * 25.4 > 183) message("wider than 183 mm (Nature's limit): draw fewer samples")
