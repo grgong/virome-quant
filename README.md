@@ -10,6 +10,8 @@ the 2 M subsample, and once you have the vOTU panel it counts the vOTUs in all r
 ## Setup
 
 ```bash
+git clone https://github.com/grgong/virome-quant.git
+cd virome-quant
 conda env create -p ~/envs/virome_quant -f environment.yml
 conda activate virome_quant
 export TMPDIR=/scratch/$USER/tmp; mkdir -p $TMPDIR    # a mapping job uses up to 20 GB here
@@ -26,24 +28,33 @@ results. See `samples.example.tsv`.
 ## Subsample
 
 ```bash
-N=$(( $(wc -l < samples.tsv) - 1 ))
+N=$(( $(wc -l < samples.tsv) - 1 ))      # number of samples
 sbatch -p <partition> --array=1-$N%20 subsample.sbatch samples.tsv virome_2M
 ```
 
-Send `virome_2M/reads/` (about 280 MB per library) to whoever runs the discovery.
+Send `virome_2M/reads/` (about 280 MB per library) to Gaorui, who runs the discovery.
 
 ## Count
 
-The discovery gives you a directory with `panel.fa`, `virus_units.tsv` and `quality_summary.tsv`.
+Gaorui sends back a directory with `panel.fa` (the vOTU sequences), `virus_units.tsv` and
+`quality_summary.tsv`.
+
+Counting uses all reads of each library, not the 2 M subsample. `map.sbatch` trims the reads with
+fastp and maps them to the vOTU sequences with minimap2, keeping the reads aligned over at least
+80 % of their length. `count.py` then runs CoverM on the BAM files. A read counts for a vOTU when
+it is at least 90 % identical to it. A vOTU is detected in a library when such reads cover at
+least 75 % of its length; below that its count is set to 0. RPM is the count per million reads
+that pass fastp.
 
 ```bash
+conda activate virome_quant
+export TMPDIR=/scratch/$USER/tmp
+N=$(( $(wc -l < samples.tsv) - 1 ))      # number of samples, as for the subsample
 sbatch -p <partition> --array=1-$N%20 map.sbatch samples.tsv <panel_dir> virome_quant
 python3 count.py samples.tsv <panel_dir> virome_quant      # after every map task has finished
 ```
 
-A vOTU counts in a library when reads at least 90 % identical to it cover at least 75 % of its
-length. RPM is per million reads that pass fastp. If a map task fails, rerun it alone with
-`--array=<its number>`.
+If a map task fails, rerun it alone with `--array=<its number>`.
 
 Results are in `virome_quant/results/`:
 
